@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal - Borabu TTC</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Arial, sans-serif';
+      background: #f0f4f8;
+      min-height: 100vh;
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    .container {
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .header {
+      background: #3498db;
+      color: #ffffff;
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 8px;
+      transition: transform 0.3s ease;
+    }
+    .menu-toggle:hover {
+      transform: scale(1.15);
+    }
+    .menu-content {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 24px;
+      background: #2980b9;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      width: 220px;
+      z-index: 1000;
+      animation: slideDown 0.3s ease-out;
+    }
+    .menu-content.active {
+      display: block;
+    }
+    .menu-content a, .menu-content button {
+      color: #ffffff;
+      padding: 12px 20px;
+      text-decoration: none;
+      display: block;
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .menu-content a:hover, .menu-content button:hover {
+      background: #1abc9c;
+    }
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .slider {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      margin: 24px auto;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .slider img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      display: none;
+      transition: opacity 0.5s ease;
+    }
+    .slider img.active {
+      display: block;
+      opacity: 1;
+    }
+    .fees-overview {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+    .fees-overview div {
+      flex: 1;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .fees-overview .highlight {
+      color: #e74c3c;
+    }
+    .section {
+      display: none;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .section.active {
+      display: block;
+    }
+    h1 {
+      font-size: 28px;
+      color: #3498db;
+      margin-bottom: 16px;
+      font-weight: 700;
+      border-bottom: 3px solid #1abc9c;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #e74c3c;
+      font-size: 20px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .card {
+      background: #ecf0f1;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 15px;
+      overflow-x: auto;
+      display: block;
+    }
+    th, td {
+      border: 1px solid #dfe6e9;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #3498db;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    tr:nth-child(even) {
+      background: #ecf0f1;
+    }
+    .announcement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .announcement-card {
+      background: #fef9e7;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #e74c3c;
+      transition: transform 0.3s ease;
+    }
+    .announcement-card.unread {
+      background: #fce4d6;
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+    }
+    .announcement-card:hover {
+      transform: translateY(-5px);
+    }
+    .announcement-card h4 {
+      margin: 0 0 12px;
+      color: #2c3e50;
+      font-size: 18px;
+    }
+    .announcement-card p {
+      margin: 8px 0;
+      font-size: 15px;
+    }
+    .announcement-card .mark-read {
+      background: #e74c3c;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      margin-top: 12px;
+    }
+    .announcement-card .mark-read:hover {
+      background: #c0392b;
+    }
+    button {
+      padding: 12px 24px;
+      background: #1abc9c;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: transform 0.3s ease, background 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    button:hover {
+      background: #16a085;
+      transform: scale(1.05);
+    }
+    .error-message {
+      color: #e74c3c;
+      font-size: 15px;
+      margin: 16px;
+      padding: 12px;
+      background: #fee4e2;
+      border-radius: 6px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .payment-center {
+      text-align: center;
+      padding: 24px;
+      background: #f0f4f8;
+      border-radius: 12px;
+      border: 2px solid #1abc9c;
+      margin-bottom: 16px;
+    }
+    .payment-center h1 {
+      font-size: 24px;
+      color: #e74c3c;
+      margin-bottom: 16px;
+    }
+    .payment-assurance {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+    .payment-assurance li {
+      margin: 12px 0;
+      font-size: 16px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .payment-assurance li i {
+      color: #27ae60;
+      font-size: 18px;
+    }
+    .online-dot {
+      width: 10px;
+      height: 10px;
+      background: #27ae60;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 8px;
+      box-shadow: 0 0 8px #27ae60;
+      animation: pulse 1.5s infinite;
+    }
+    .profile-info p {
+      margin: 12px 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .profile-info i {
+      color: #e74c3c;
+      font-size: 18px;
+    }
+    .progress-bar {
+      width: 100%;
+      background: #dfe6e9;
+      border-radius: 8px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+    .progress {
+      height: 24px;
+      border-radius: 8px;
+      background: #3498db;
+      text-align: center;
+      color: #ffffff;
+      line-height: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: width 0.5s ease;
+    }
+    .term-select {
+      margin: 16px 0;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #dfe6e9;
+      width: 100%;
+      max-width: 300px;
+      transition: border-color 0.3s ease;
+    }
+    .term-select:focus {
+      border-color: #e74c3c;
+      outline: none;
+    }
+    .announcements-nav {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .announcements-nav button {
+      background: #3498db;
+      padding: 10px 20px;
+      font-size: 15px;
+      border-radius: 8px;
+      color: #ffffff;
+    }
+    .announcements-nav button.active {
+      background: #e74c3c;
+    }
+    .announcements-nav button:hover {
+      background: #2980b9;
+    }
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #3498db;
+      padding: 12px 0;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    .bottom-nav.active {
+      display: block;
+    }
+    .bottom-nav .nav-items {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .bottom-nav a, .bottom-nav button {
+      color: #ffffff;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    .bottom-nav a:hover, .bottom-nav button:hover {
+      color: #ecf0f1;
+    }
+    .bottom-nav i {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    footer {
+      background: #2c3e50;
+      color: #ffffff;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 14px;
+    }
+    footer p {
+      margin: 4px 0;
+    }
+    footer a {
+      color: #1abc9c;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    .helb-card {
+      background: #ecf0f1;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border-left: 4px solid #3498db;
+      text-align: center;
+    }
+    .coming-soon {
+      background: #f0f4f8;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 2px dashed #1abc9c;
+      text-align: center;
+      color: #e74c3c;
+      font-style: italic;
+      font-size: 18px;
+    }
+    .loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #e74c3c;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      z-index: 2000;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 5px #27ae60; }
+      50% { transform: scale(1.2); box-shadow: 0 0 12px #27ae60; }
+      100% { transform: scale(1); box-shadow: 0 0 5px #27ae60; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 16px;
+      }
+      .sidebar {
+        display: none;
+      }
+      .bottom-nav {
+        display: block;
+      }
+      .section {
+        margin: 12px;
+        padding: 16px;
+      }
+      .slider img {
+        height: 200px;
+      }
+      .fees-overview div {
+        flex: 1 1 100%;
+      }
+      .header h1 {
+        font-size: 20px;
+      }
+      .menu-content {
+        right: 12px;
+        width: 180px;
+      }
+      .menu-content a, .menu-content button {
+        font-size: 15px;
+        padding: 10px 16px;
+      }
+    }
+    @media (min-width: 769px) {
+      .sidebar {
+        display: block;
+        width: 280px;
+        height: calc(100vh - 60px);
+        position: fixed;
+        top: 60px;
+        left: 0;
+        background: #2980b9;
+        padding: 24px;
+        z-index: 900;
+      }
+      .sidebar .profile {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .sidebar .profile img {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        border: 3px solid #ffffff;
+      }
+      .sidebar .profile img:hover {
+        transform: scale(1.1);
+      }
+      .sidebar .profile p {
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .main-content {
+        margin-left: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Borabu TTC Student Portal</h1>
+      <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+      <div class="menu-content" id="menuContent">
+        <a href="#" onclick="showSection('profile', hideMenu())">Profile</a>
+        <a href="#" onclick="showSection('marks', hideMenu())">Academics</a>
+        <a href="#" onclick="showSection('fees', hideMenu())">Fees</a>
+        <a href="#" onclick="showSection('payFees', hideMenu())">Pay Fees</a>
+        <a href="#" onclick="showSection('announcements', hideMenu())">Announcements</a>
+        <a href="#" onclick="showSection('timetables', hideMenu())">Timetables</a>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="profile">
+        <img src="https://img.icons8.com/color/90/000000/student-male.png" alt="Student Icon">
+        <p id="studentName"></p><span class="online-dot"></span>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="slider">
+        <img src="https://images.unsplash.com/photo-1523240795612-9a054d8e4799?q=80&w=1470&auto=format&fit=crop" alt="Success" class="active">
+        <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=1470&auto=format&fit=crop" alt="Education">
+        <img src="https://images.unsplash.com/photo-1503676260728-9545f896d1a8?q=80&w=1470&auto=format&fit=crop" alt="Achievement">
+      </div>
+      <div class="fees-overview">
+        <div>Total Billed: <span id="feesTotal">Loading...</span></div>
+        <div>Total Paid: <span id="feesPaid">Awaiting Update</span></div>
+        <div class="highlight">Balance: <span id="feesBalance">Calculating...</span></div>
+      </div>
+      <div id="profile" class="section active">
+        <h1>Profile</h1>
+        <div class="profile-info">
+          <p><i class="fas fa-id-card"></i> Admission Number: <strong id="regNo"></strong></p>
+          <p><i class="fas fa-user"></i> Name: <strong id="name"></strong></p>
+          <p><i class="fas fa-calendar"></i> Year: <strong id="year">Year in Progress</strong></p>
+          <p><i class="fas fa-stream"></i> Stream: <strong id="stream">Stream Details</strong></p>
+          <p><i class="fas fa-venus-mars"></i> Gender: <strong id="gender">To Be Updated</strong></p>
+          <p><i class="fas fa-hand-holding-usd"></i> Sponsor: <strong id="sponsor">Sponsor Info</strong></p>
+          <p><i class="fas fa-users"></i> Parent Name: <strong id="parentName">Parent Details</strong></p>
+          <p><i class="fas fa-phone"></i> Parent Phone: <strong id="parentPhone">Contact Pending</strong></p>
+          <div class="progress-bar">
+            <div class="progress" id="progressBar" style="width: 0%;">0% Graduation Tracker</div>
+          </div>
+        </div>
+        <div class="helb-card">
+          <h2>Apply for HELB Now!</h2>
+          <p><i class="fas fa-graduation-cap"></i> Secure financial support for your education through the Higher Education Loans Board (HELB).</p>
+          <button onclick="window.open('https://www.helb.co.ke/', '_blank')"><i class="fas fa-external-link-alt"></i> Apply</button>
+        </div>
+      </div>
+      <div id="marks" class="section">
+        <h1>Academics</h1>
+        <select class="term-select" id="termSelect" onchange="updateMarks()">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+        <div class="card">
+          <table id="marksTable">
+            <thead>
+              <tr>
+                <th>Term</th>
+                <th>Subject</th>
+                <th>CAT Score</th>
+                <th>Exam Score</th>
+                <th>Grade</th>
+              </tr>
+            </thead>
+            <tbody id="marksBody"></tbody>
+          </table>
+        </div>
+        <button onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+      </div>
+      <div id="fees" class="section">
+        <h1>Fees</h1>
+        <div class="card">
+          <p>Total: <span id="feesTotal">Loading...</span></p>
+          <p>Paid: <span id="feesPaid">Awaiting Update</span></p>
+          <p>Balance: <span id="feesBalance">Calculating...</span></p>
+          <p>Statement: <span id="feesStatement">Statement in Progress</span></p>
+          <table id="transactionsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Payer</th>
+                <th>Transaction Code</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsBody"></tbody>
+          </table>
+          <button onclick="downloadFeePDF()"><i class="fas fa-file-pdf"></i> Download Fee PDF</button>
+        </div>
+      </div>
+      <div id="payFees" class="section">
+        <h1>Pay Fees</h1>
+        <div class="payment-center">
+          <h1>Welcome to Borabu TTC Fee Payment Centre</h1>
+          <p>Make your payments with ease and confidence!</p>
+          <ul class="payment-assurance">
+            <li><i class="fas fa-clock"></i> Fast Processing</li>
+            <li><i class="fas fa-tools"></i> Reliable Service</li>
+            <li><i class="fas fa-shield-alt"></i> Trusted Platform</li>
+            <li><i class="fas fa-lock"></i> Secure Transactions</li>
+            <li><i class="fas fa-headset"></i> 24/7 Support</li>
+          </ul>
+          <button onclick="window.open('https://payment.intasend.com/pay/b90e1c19-33da-4b7d-a654-c4fb72eb9ea7/', '_blank')"><i class="fas fa-credit-card"></i> Pay Now</button>
+          <p>After payment, please contact the Accounts Office to confirm receipt. For issues, visit the office for assistance.</p>
+        </div>
+      </div>
+      <div id="announcements" class="section">
+        <h1>Announcements</h1>
+        <div class="announcements-nav">
+          <button id="generalBtn" class="active" onclick="showAnnouncements('general')">General</button>
+          <button id="individualBtn" onclick="showAnnouncements('individual')">Individual</button>
+        </div>
+        <div class="announcement-grid" id="announcementsContainer"></div>
+      </div>
+      <div id="timetables" class="section">
+        <h1>Timetables</h1>
+        <div class="coming-soon">
+          <p><i class="fas fa-clock"></i> Coming Soon! Get ready for schedule updates!</p>
+        </div>
+      </div>
+    </div>
+    <div id="errorMessage" class="error-message"></div>
+    <div class="loader" id="loader"></div>
+    <footer>
+      <p>Contact: <a href="mailto:info@borabuttc.ac.ke">info@borabuttc.ac.ke</a> | Phone: +254 712 345 678</p>
+      <p>© 2025 Borabu Teachers Training College. All rights reserved.</p>
+    </footer>
+  </div>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCi9NWfDwbWSByd_R7ueNkLcQsFlBJ5_VA",
+      authDomain: "web-reg-cbf2f.firebaseapp.com",
+      databaseURL: "https://web-reg-cbf2f-default-rtdb.firebaseio.com",
+      projectId: "web-reg-cbf2f",
+      storageBucket: "web-reg-cbf2f.firebasestorage.app",
+      messagingSenderId: "431303341740",
+      appId: "1:431303341740:web:542070e4c471cd7c8ad109",
+      measurementId: "G-164GMVZQY3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentSection = 'profile';
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slider img');
+
+    function showSection(section, callback) {
+      document.querySelectorAll(".section").forEach(div => div.classList.remove("active"));
+      document.getElementById(section).classList.add("active");
+      currentSection = section;
+      if (callback) callback();
+      updateBottomNav();
+    }
+
+    function showError(message, isSuccess = false) {
+      const errorDiv = document.getElementById("errorMessage");
+      errorDiv.textContent = message;
+      errorDiv.style.background = isSuccess ? '#d1fae5' : '#fee4e2';
+      errorDiv.style.color = isSuccess ? '#27ae60' : '#e74c3c';
+      errorDiv.style.display = "block";
+      setTimeout(() => { errorDiv.style.display = "none"; }, 5000);
+    }
+
+    function getUserNameByEmail(email, role) {
+      return db.ref(`users/${role}`).once("value").then(snapshot => {
+        const users = snapshot.val() || {};
+        for (let key in users) {
+          if (users[key].email === email || users[key].email === email + ".stacc@moke.ac") {
+            return users[key].name || email;
+          }
+        }
+        return email.replace(".stacc@moke.ac", "");
+      }).catch(() => email.replace(".stacc@moke.ac", ""));
+    }
+
+    function toggleMenu() {
+      const menuContent = document.getElementById("menuContent");
+      menuContent.classList.toggle("active");
+    }
+
+    function hideMenu() {
+      const menuContent = document.getElementById("menuContent");
+      menuContent.classList.remove("active");
+    }
+
+    function logout() {
+      localStorage.clear();
+      setTimeout(() => window.location.href = "index.html", 100);
+    }
+
+    function updateMarks() {
+      const loader = document.getElementById("loader");
+      loader.style.display = "block";
+      const term = document.getElementById("termSelect").value;
+      const regNo = localStorage.getItem("regNo").replace(/\//g, "_");
+      const studentRef = db.ref("users/students/" + regNo);
+      studentRef.once("value", (snapshot) => {
+        loader.style.display = "none";
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const marksBody = document.getElementById("marksBody");
+          marksBody.innerHTML = "";
+          const termData = data.marks?.[term] || data.academics?.[term];
+          let hasMarks = false;
+          if (termData) {
+            hasMarks = true;
+            for (const [subject, catScore] of Object.entries(termData.cat || {})) {
+              const examScore = termData.exam?.[subject] || (termData[subject] || "Pending");
+              const grade = termData.grades?.[subject] || termData.grades?.[subject.toLowerCase()] || "TBA";
+              marksBody.innerHTML += `<tr>
+                <td>${term.replace("term", "Term ")}</td>
+                <td>${subject}</td>
+                <td>${catScore !== undefined ? catScore : "Awaiting"}</td>
+                <td>${examScore !== undefined ? examScore : "Pending"}</td>
+                <td>${grade}</td>
+              </tr>`;
+            }
+          }
+          if (!hasMarks) {
+            marksBody.innerHTML = "<tr><td colspan='5'>No marks recorded yet</td></tr>";
+          }
+        } else {
+          showError("Student profile not found.");
+        }
+      }).catch((error) => {
+        loader.style.display = "none";
+        showError("Failed to update marks: " + error.message);
+      });
+    }
+
+    function downloadPDF() {
+      const loader = document.getElementById("loader");
+      loader.style.display = "block";
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const name = document.getElementById("name").textContent;
+      const regNo = document.getElementById("regNo").textContent;
+      const stream = document.getElementById("stream").textContent;
+      const year = document.getElementById("year").textContent;
+      const today = new Date().toLocaleDateString();
+      const marksBody = document.getElementById("marksBody");
+
+      doc.setFontSize(18);
+      doc.setFillColor(52, 152, 219);
+      doc.rect(0, 0, 210, 40, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Borabu Teacher's Training College", 20, 20);
+      doc.text("Academic Report", 20, 30);
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("P.O. Box 443, Nyamira", 20, 45);
+      doc.text("Date: " + today, 20, 53);
+
+      doc.setFontSize(12);
+      doc.text(`Name: ${name}`, 20, 65);
+      doc.text(`Registration Number: ${regNo}`, 20, 73);
+      doc.text(`Stream: ${stream}`, 20, 81);
+      doc.text(`Year: ${year}`, 20, 89);
+      doc.text("Course: Diploma in Primary Education", 20, 97);
+
+      const rows = [];
+      if (marksBody.querySelectorAll("tr").length > 0) {
+        marksBody.querySelectorAll("tr").forEach(row => {
+          const cols = Array.from(row.querySelectorAll("td")).map(td => td.textContent);
+          rows.push(cols);
+        });
+        doc.autoTable({
+          startY: 105,
+          head: [["Term", "Subject", "CAT Score", "Exam Score", "Grade"]],
+          body: rows,
+          theme: 'grid',
+          styles: { cellPadding: 3, fontSize: 10, lineColor: [0, 0, 0], lineWidth: 0.1 },
+          headStyles: { fillColor: [52, 152, 219], textColor: [255, 255, 255], fontStyle: 'bold' },
+          bodyStyles: { alternateRowStyles: { fillColor: [236, 240, 241] } },
+        });
+      } else {
+        doc.text("No marks recorded yet", 20, 105);
+      }
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Registrar: Mr. Mojo", 20, 270);
+      doc.text("Signature: ___________________", 120, 270);
+      doc.text("Date: " + today, 120, 278);
+
+      doc.save(`${name.replace(/ /g, "_")}_Academic_Report.pdf`);
+      loader.style.display = "none";
+    }
+
+    function downloadFeePDF() {
+      const loader = document.getElementById("loader");
+      loader.style.display = "block";
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const name = document.getElementById("name").textContent;
+      const regNo = document.getElementById("regNo").textContent;
+      const today = new Date().toLocaleDateString();
+      const total = document.getElementById("feesTotal").textContent.replace(/,/g, "");
+      const paid = document.getElementById("feesPaid").textContent.replace(/,/g, "");
+      const balance = document.getElementById("feesBalance").textContent.replace(/,/g, "");
+      const statement = document.getElementById("feesStatement").textContent;
+      const transactionsBody = document.getElementById("transactionsBody");
+
+      doc.setFontSize(18);
+      doc.setFillColor(52, 152, 219);
+      doc.rect(0, 0, 210, 40, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Borabu Teacher's Training College", 20, 20);
+      doc.text("Fee Statement", 20, 30);
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("P.O. Box 443, Nyamira", 20, 45);
+      doc.text("Date: " + today, 20, 53);
+
+      doc.setFontSize(12);
+      doc.text(`Name: ${name}`, 20, 65);
+      doc.text(`Registration Number: ${regNo}`, 20, 73);
+      doc.text(`Total Fees: ${total}`, 20, 81);
+      doc.text(`Paid: ${paid}`, 20, 89);
+      doc.text(`Balance: ${balance}`, 20, 97);
+      doc.text(`Statement: ${statement}`, 20, 105);
+
+      const rows = [];
+      if (transactionsBody.querySelectorAll("tr").length > 0) {
+        transactionsBody.querySelectorAll("tr").forEach(row => {
+          const cols = Array.from(row.querySelectorAll("td")).map(td => td.textContent);
+          rows.push(cols);
+        });
+        doc.autoTable({
+          startY: 115,
+          head: [["Date", "Amount", "Method", "Payer", "Transaction Code"]],
+          body: rows,
+          theme: 'grid',
+          styles: { cellPadding: 3, fontSize: 10, lineColor: [0, 0, 0], lineWidth: 0.1 },
+          headStyles: { fillColor: [52, 152, 219], textColor: [255, 255, 255], fontStyle: 'bold' },
+          bodyStyles: { alternateRowStyles: { fillColor: [236, 240, 241] } },
+        });
+      } else {
+        doc.text("No transactions recorded yet", 20, 115);
+      }
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Accounts Office", 20, 270);
+      doc.text("Signature: ___________________", 120, 270);
+      doc.text("Contact: +254 712 345 678", 120, 278);
+
+      doc.save(`${name.replace(/ /g, "_")}_Fee_Statement.pdf`);
+      loader.style.display = "none";
+    }
+
+    function updateBottomNav() {
+      const bottomNav = document.querySelector('.bottom-nav');
+      if (window.innerWidth <= 768) {
+        bottomNav.classList.add('active');
+      } else {
+        bottomNav.classList.remove('active');
+      }
+    }
+
+    function slideShow() {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+    }
+
+    window.onload = function() {
+      const userType = localStorage.getItem("userType");
+      const regNo = localStorage.getItem("regNo");
+      const studentName = localStorage.getItem("studentName");
+
+      if (userType !== "student" || !regNo) {
+        localStorage.clear();
+        setTimeout(() => window.location.href = "index.html", 100);
+        return;
+      }
+
+      document.getElementById("studentName").textContent = studentName || "Student Profile";
+      document.getElementById("regNo").textContent = regNo.replace(/_/g, "/");
+
+      const loader = document.getElementById("loader");
+      loader.style.display = "block";
+      const studentRef = db.ref("users/students/" + regNo.replace(/\//g, "_"));
+      studentRef.once("value", (snapshot) => {
+        loader.style.display = "none";
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const profile = data.profile || {};
+          document.getElementById("name").textContent = profile.name || data.name || "Student Name";
+          const year = profile.year || data.form?.replace("form", "Year ") || "Year in Progress";
+          document.getElementById("year").textContent = year;
+          const progress = year === "Year 1" ? 25 : year === "Year 2" ? 50 : year === "Year 3" ? 75 : year === "Year 4" ? 100 : 0;
+          document.getElementById("progressBar").style.width = progress + "%";
+          document.getElementById("progressBar").textContent = progress + "% Graduation Tracker";
+          document.getElementById("stream").textContent = profile.stream || data.stream || "Stream Details";
+          document.getElementById("gender").textContent = profile.gender || data.gender || "To Be Updated";
+          document.getElementById("sponsor").textContent = data.fees?.sponsor || "Sponsor Info";
+          document.getElementById("parentName").textContent = profile.parentName || data.parentName || "Parent Details";
+          document.getElementById("parentPhone").textContent = profile.parentPhone || data.parentPhone || "Contact Pending";
+
+          const marksBody = document.getElementById("marksBody");
+          marksBody.innerHTML = "";
+          const term = document.getElementById("termSelect").value;
+          const termData = data.marks?.[term] || data.academics?.[term];
+          let hasMarks = false;
+          if (termData) {
+            hasMarks = true;
+            for (const [subject, catScore] of Object.entries(termData.cat || {})) {
+              const examScore = termData.exam?.[subject] || (termData[subject] || "Pending");
+              const grade = termData.grades?.[subject] || termData.grades?.[subject.toLowerCase()] || "TBA";
+              marksBody.innerHTML += `<tr>
+                <td>${term.replace("term", "Term ")}</td>
+                <td>${subject}</td>
+                <td>${catScore !== undefined ? catScore : "Awaiting"}</td>
+                <td>${examScore !== undefined ? examScore : "Pending"}</td>
+                <td>${grade}</td>
+              </tr>`;
+            }
+          }
+          if (!hasMarks) {
+            marksBody.innerHTML = "<tr><td colspan='5'>No marks recorded yet</td></tr>";
+          }
+
+          const feesData = data.fees || {};
+          const total = feesData.total || feesData.totalExpected || 0;
+          const paidFromDb = feesData.paid || 0;
+          const transactions = feesData.transactions || [];
+          let totalPaid = paidFromDb;
+          if (Array.isArray(transactions)) {
+            totalPaid += transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          } else if (typeof transactions === "object") {
+            totalPaid += Object.values(transactions).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+          }
+          const balanceFromDb = feesData.balance !== undefined ? feesData.balance : null;
+          const calculatedBalance = Math.max(0, total - totalPaid);
+          const balance = balanceFromDb !== null ? balanceFromDb : calculatedBalance;
+          const statement = feesData.statement || "Statement in Progress";
+          document.getElementById("feesTotal").textContent = total.toLocaleString() || "Loading...";
+          document.getElementById("feesPaid").textContent = totalPaid.toLocaleString() || "Awaiting Update";
+          document.getElementById("feesBalance").textContent = balance.toLocaleString() || "Calculating...";
+          document.getElementById("feesStatement").textContent = statement;
+
+          const transactionsBody = document.getElementById("transactionsBody");
+          transactionsBody.innerHTML = "";
+          if (Array.isArray(transactions)) {
+            transactions.forEach(tx => {
+              transactionsBody.innerHTML += `<tr>
+                <td>${tx.date || "Date TBD"}</td>
+                <td>${tx.amount || "0"}</td>
+                <td>${tx.method || "Method TBD"}</td>
+                <td>${tx.payer || "Payer TBD"}</td>
+                <td>${tx.transactionCode || tx.mpesaCode || "Code TBD"}</td>
+              </tr>`;
+            });
+          } else if (typeof transactions === "object") {
+            Object.values(transactions).forEach(tx => {
+              transactionsBody.innerHTML += `<tr>
+                <td>${tx.date || "Date TBD"}</td>
+                <td>${tx.amount || "0"}</td>
+                <td>${tx.method || "Method TBD"}</td>
+                <td>${tx.payer || "Payer TBD"}</td>
+                <td>${tx.transactionCode || tx.mpesaCode || "Code TBD"}</td>
+              </tr>`;
+            });
+          }
+        } else {
+          showError("Student profile not found.");
+          localStorage.clear();
+          setTimeout(() => window.location.href = "index.html", 100);
+        }
+      }).catch((error) => {
+        loader.style.display = "none";
+        showError("Failed to load data: " + error.message);
+        localStorage.clear();
+        setTimeout(() => window.location.href = "index.html", 100);
+      });
+
+      const normalizedRegNo = regNo.replace(/\//g, "_");
+      const announcementsRef = db.ref("announcements");
+      const announcementsContainer = document.getElementById("announcementsContainer");
+
+      function updateAnnouncements(type) {
+        announcementsContainer.innerHTML = "<div class='loader' style='display: inline-block; width: 30px; height: 30px;'></div> Loading announcements...";
+        const isIndividual = type === "individual";
+        const snapRef = isIndividual ? announcementsRef.child("individual").child(normalizedRegNo) : announcementsRef.child("general");
+        snapRef.once("value", (snapshot) => {
+          const announcements = [];
+          const readRef = db.ref(`users/students/${normalizedRegNo}/readAnnouncements`);
+          readRef.once("value", (readSnapshot) => {
+            const readAnnouncements = readSnapshot.val() || {};
+            snapshot.forEach(childSnapshot => {
+              const value = childSnapshot.val();
+              if (value && (value.message || value.text)) {
+                const sender = value.sender || value.teacher || value.accountant || (isIndividual ? "Unknown" : value.author);
+                const isRead = readAnnouncements[childSnapshot.key] === true;
+                announcements.push({
+                  ...value,
+                  key: childSnapshot.key,
+                  type,
+                  sender: sender || "Unknown",
+                  date: value.date || new Date().toISOString(),
+                  isRead
+                });
+              }
+            });
+            if (announcements.length === 0) {
+              announcementsContainer.innerHTML = `<p>No ${isIndividual ? "individual" : "general"} announcements available.</p>`;
+            } else {
+              Promise.all(announcements.map(ann => {
+                if (ann.sender && ann.sender !== "Unknown") {
+                  return getUserNameByEmail(ann.sender + (ann.sender.includes("@") ? "" : ".stacc@moke.ac"), ann.role === "accountant" ? "accountants" : "teachers")
+                    .then(name => ({ ...ann, sender: name }));
+                }
+                return Promise.resolve(ann);
+              })).then(updatedAnnouncements => {
+                renderAnnouncements(updatedAnnouncements);
+              });
+            }
+          });
+        }, (error) => {
+          showError("Failed to load announcements: " + error.message);
+        });
+      }
+
+      function renderAnnouncements(announcements) {
+        announcementsContainer.innerHTML = "";
+        announcements.sort((a, b) => new Date(b.date) - new Date(a.date));
+        announcements.forEach(ann => {
+          const div = document.createElement("div");
+          div.className = `announcement-card ${ann.isRead ? "read" : "unread"}`;
+          div.innerHTML = `
+            <h4>${ann.title || ann.text || ann.message} (${new Date(ann.date).toLocaleDateString()})</h4>
+            <p>${ann.message || ann.text}</p>
+            <p><strong>By:</strong> ${ann.sender || "Unknown"}</p>
+            ${ann.type === "individual" ? '<p><strong>To:</strong> You</p>' : ""}
+            ${ann.isRead ? '' : `<button class="mark-read" onclick="markAsRead('${ann.key}', '${ann.type}')">Mark as Read</button>`}
+          `;
+          announcementsContainer.appendChild(div);
+        });
+      }
+
+      function markAsRead(key, type) {
+        const regNo = localStorage.getItem("regNo").replace(/\//g, "_");
+        const readRef = db.ref(`users/students/${regNo}/readAnnouncements/${key}`);
+        readRef.set(true).then(() => {
+          showError("Announcement marked as read!", true);
+          updateAnnouncements(type);
+        }).catch(error => {
+          showError("Failed to mark announcement as read: " + error.message);
+        });
+      }
+
+      updateAnnouncements("general");
+      window.showAnnouncements = function(type) {
+        const generalBtn = document.getElementById("generalBtn");
+        const individualBtn = document.getElementById("individualBtn");
+        if (type === "general") {
+          generalBtn.classList.add("active");
+          individualBtn.classList.remove("active");
+        } else {
+          generalBtn.classList.remove("active");
+          individualBtn.classList.add("active");
+        }
+        updateAnnouncements(type);
+      };
+
+      updateBottomNav();
+      window.addEventListener('resize', updateBottomNav);
+      setInterval(slideShow, 5000);
+
+      const quotes = [
+        '"Education is the key to unlocking the world, a passport to freedom." - Finley Onchiri',
+        '"The future belongs to those who believe in the beauty of their dreams." - Eleanor Roosevelt',
+        '"Learn as if you will live forever, live as if you will die tomorrow." - Mahatma Gandhi'
+      ];
+      let quoteIndex = 0;
+      setInterval(() => {
+        quoteIndex = (quoteIndex + 1) % quotes.length;
+        document.getElementById("dailyQuote") && (document.getElementById("dailyQuote").textContent = quotes[quoteIndex]);
+      }, 5000);
+    };
+  </script>
+</body>
+</html>
